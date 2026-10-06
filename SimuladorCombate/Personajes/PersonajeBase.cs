@@ -15,7 +15,7 @@
         private readonly int _ataqueInicial;
         private readonly int _defensaInicial;
 
-        public PersonajeBase(string nombre, int ataqueBase, int energiaMax, int defensaBase = 0)
+        public PersonajeBase(string nombre, int ataqueBase, int energiaMax, int defensaBase = 100)
         {
             Nombre = nombre;
             VidaActual = VidaMax;

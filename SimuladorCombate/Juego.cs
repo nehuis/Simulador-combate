@@ -1,4 +1,7 @@
-﻿using ProyectoSimulador.Interfaces;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using ProyectoSimulador.Interfaces;
 using ProyectoSimulador.Personajes;
 
 namespace ProyectoSimulador
@@ -25,13 +28,15 @@ namespace ProyectoSimulador
                 }
             }
 
-            Console.WriteLine("\n ¡Gracias por jugar!");
+            Console.WriteLine("\n¡Gracias por jugar!");
         }
+
         private void CargarJugadores()
         {
+            _jugadores.Clear();
             bool cargar = true;
 
-            while(cargar || _jugadores.Count < 2)
+            while (cargar || _jugadores.Count < 2)
             {
                 Console.Clear();
                 Console.WriteLine("---- CARGANDO JUGADORES ----");
@@ -41,7 +46,7 @@ namespace ProyectoSimulador
                 string nombre = Console.ReadLine();
 
                 Console.WriteLine("\n Seleccione un rol: ");
-                foreach(var rol in Enum.GetValues(typeof(EnumRol)))
+                foreach (var rol in Enum.GetValues(typeof(EnumRol)))
                 {
                     Console.WriteLine($"{(int)rol}. {rol}");
                 }
@@ -79,16 +84,16 @@ namespace ProyectoSimulador
         {
             int numeroRonda = 1;
 
-            while(_jugadores.Count(p => p.VidaActual > 0) > 1)
+            while (_jugadores.Count(p => p.VidaActual > 0) > 1)
             {
                 Console.Clear();
                 Console.WriteLine("====================");
                 Console.WriteLine($"INICIO DE LA RONDA {numeroRonda}");
                 Console.WriteLine("====================");
 
-                foreach(var atacante in _jugadores)
+                foreach (var atacante in _jugadores)
                 {
-                    if(atacante.VidaActual > 0 && _jugadores.Count(p => p.VidaActual > 0) > 1)
+                    if (atacante.VidaActual > 0 && _jugadores.Count(p => p.VidaActual > 0) > 1)
                     {
                         EjecutarTurno(atacante);
                     }
@@ -104,29 +109,34 @@ namespace ProyectoSimulador
             var ganador = _jugadores.FirstOrDefault(p => p.VidaActual > 0);
             Console.Clear();
             Console.WriteLine("¡FIN DEL JUEGO!");
-            Console.WriteLine($"El ganador es {ganador.Nombre}");
-            Console.WriteLine($"Estadísticas finales -> Vida: {ganador.VidaActual} | Energía: {ganador.EnergiaActual}");
+            if (ganador != null)
+            {
+                Console.WriteLine($"El ganador es {ganador.Nombre}");
+                Console.WriteLine($"Estadísticas finales -> Vida: {ganador.VidaActual} | Energía: {ganador.EnergiaActual}");
+            }
         }
 
         private void EjecutarTurno(PersonajeBase atacante)
         {
             Console.WriteLine($"\n----------------------------------");
-            Console.WriteLine($"TURNO DE: {atacante.Nombre}");
+            Console.WriteLine($"TURNO DE: {atacante.Nombre} ({atacante.GetType().Name})");
             Console.WriteLine($"Vida: {atacante.VidaActual}/100 | Energía: {atacante.EnergiaActual}/{atacante.EnergiaMaxima}");
 
             Console.Write("¿Desea activar su Habilidad Especial? (S/N): ");
             bool quiereHabilidad = Console.ReadLine()?.Trim().ToUpper() == "S";
-            bool esquivaContraataque = false;
+            bool habExitosa = false;
 
             if (quiereHabilidad)
             {
-                esquivaContraataque = atacante.UsarHabilidadEspecial();
+                habExitosa = atacante.UsarHabilidadEspecial();
             }
 
-            var enemigosVivos = _jugadores.Where(p => p != atacante && p.VidaActual > 0).ToList();
-            Console.WriteLine("\n Elija un enemigo para atacar");
+            bool esquivaContraataque = habExitosa && (atacante is Arquero);
 
-            for(int i = 0; i < enemigosVivos.Count; i++)
+            var enemigosVivos = _jugadores.Where(p => p != atacante && p.VidaActual > 0).ToList();
+            Console.WriteLine("\n Elija un enemigo para atacar:");
+
+            for (int i = 0; i < enemigosVivos.Count; i++)
             {
                 Console.WriteLine($"{i + 1}. {enemigosVivos[i].Nombre} (Vida: {enemigosVivos[i].VidaActual})");
             }
@@ -147,18 +157,18 @@ namespace ProyectoSimulador
             }
             else if (esquivaContraataque)
             {
-                Console.WriteLine($"{atacante.Nombre} anuló el contraataque");
+                Console.WriteLine($"¡{atacante.Nombre} evitó el contraataque gracias a su habilidad!");
             }
 
             atacante.ResetearEstadisticasTemporales();
         }
 
-        private void CalcularYAplicarDanio(PersonajeBase atacante, PersonajeBase defensor)
+        private static void CalcularYAplicarDanio(PersonajeBase atacante, PersonajeBase defensor)
         {
             int danio = Math.Max(1, atacante.AtaqueBase - defensor.DefensaBase);
             defensor.VidaActual = Math.Max(0, defensor.VidaActual - danio);
 
-            Console.WriteLine($"   -> Inflige {danio} de daño. Vida de {defensor.Nombre}: {defensor.VidaActual}");
+            Console.WriteLine($"-> Inflige {danio} de daño. Vida de {defensor.Nombre}: {defensor.VidaActual}");
 
             if (defensor.VidaActual == 0)
             {
@@ -181,7 +191,7 @@ namespace ProyectoSimulador
             }
         }
 
-        private bool ConsultarRevancha()
+        private static bool ConsultarRevancha()
         {
             Console.Write("\n¿Desean jugar una revancha con los mismos personajes? (S/N): ");
             return Console.ReadLine()?.Trim().ToUpper() == "S";
@@ -195,7 +205,7 @@ namespace ProyectoSimulador
                 p.EnergiaActual = p.EnergiaMaxima;
                 p.ResetearEstadisticasTemporales();
             }
-            Console.WriteLine("\nTodas las estadísticas fueron restauradas a sus valores iniciales");
+            Console.WriteLine("\nTodas las estadísticas fueron restauradas a sus valores iniciales.");
         }
     }
 }

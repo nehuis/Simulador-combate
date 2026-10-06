@@ -11,6 +11,7 @@
             if(EnergiaActual >= 25)
             {
                 EnergiaActual -= 25;
+
                 Console.WriteLine($"{Nombre} evitará el coontraataque de su enemigo");
                 return true;
             }

@@ -13,7 +13,9 @@ namespace ProyectoSimulador.Personajes
             if(EnergiaActual >= 20)
             {
                 EnergiaActual -= 20;
+
                 DefensaBase = (int)(DefensaBase * 1.5);
+
                 Console.WriteLine($"{Nombre} activó su escudo pesado");
                 return true;
             }
@@ -29,7 +31,7 @@ namespace ProyectoSimulador.Personajes
         {
             if(VidaActual > 0)
             {
-                VidaActual += 10;
+                VidaActual = Math.Min(VidaMax, VidaActual + 10);
                 Console.WriteLine($"Ronda finalizada. {Nombre} recupera 10 puntos de vida");
             }
         }

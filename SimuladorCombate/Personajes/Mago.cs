@@ -10,10 +10,12 @@ namespace ProyectoSimulador.Personajes
 
         public override bool UsarHabilidadEspecial()
         {
-            if(EnergiaMaxima >= 40)
+            if(EnergiaActual >= 40)
             {
                 EnergiaActual -= 40;
+
                 AtaqueBase = (int)(AtaqueBase * 1.5);
+
                 Console.WriteLine($"{Nombre} activó su hechizo devastador");
                 return true;
             }

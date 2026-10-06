@@ -14,15 +14,7 @@ namespace ProyectoSimulador.Personajes
             {
                 EnergiaActual -= 25;
 
-                if(VidaActual < 100)
-                {
-                    VidaActual += 30;
-
-                    if(VidaActual > 100)
-                    {
-                        VidaActual = 100;
-                    }
-                }
+                VidaActual = Math.Min(VidaMax, VidaActual + 30);
 
                 Console.WriteLine($"{Nombre} recuperó 30 puntos de vida");
                 return true;
@@ -39,7 +31,7 @@ namespace ProyectoSimulador.Personajes
         {
             if (VidaActual > 0)
             {
-                VidaActual += 10;
+                VidaActual = Math.Min(VidaMax, VidaActual + 10);
                 Console.WriteLine($"Ronda finalizada. {Nombre} recupera 10 puntos de vida");
             }
         }
