@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using ProyectoSimulador.Interfaces;
+﻿using ProyectoSimulador.Interfaces;
 using ProyectoSimulador.Personajes;
 
 namespace ProyectoSimulador
@@ -20,7 +17,7 @@ namespace ProyectoSimulador
             {
                 EjecutarCombate();
 
-                jugarNuevamente = ConsultarRevancha();
+                jugarNuevamente = ConsultarRespuestaSN("\n¿Desean jugar una revancha con los mismos personajes? (S/N): ");
 
                 if (jugarNuevamente)
                 {
@@ -40,19 +37,27 @@ namespace ProyectoSimulador
             {
                 Console.Clear();
                 Console.WriteLine("---- CARGANDO JUGADORES ----");
-                Console.WriteLine($"Jugadores cargados : {_jugadores.Count}");
+                Console.WriteLine($"Jugadores cargados: {_jugadores.Count}");
 
-                Console.Write("Ingrese el nombre del jugador: ");
-                string nombre = Console.ReadLine();
+                string nombre = "";
+                while (string.IsNullOrWhiteSpace(nombre))
+                {
+                    Console.Write("Ingrese el nombre del jugador: ");
+                    nombre = Console.ReadLine()?.Trim();
+                    if (string.IsNullOrWhiteSpace(nombre))
+                    {
+                        Console.WriteLine("El nombre no puede estar vacío.");
+                    }
+                }
 
-                Console.WriteLine("\n Seleccione un rol: ");
-                foreach (var rol in Enum.GetValues(typeof(EnumRol)))
+                Console.WriteLine("\nSeleccione un rol:");
+                var roles = Enum.GetValues(typeof(EnumRol)).Cast<EnumRol>().ToList();
+                foreach (var rol in roles)
                 {
                     Console.WriteLine($"{(int)rol}. {rol}");
                 }
 
-                Console.Write("Opción: ");
-                int.TryParse(Console.ReadLine(), out int opcionNum);
+                int opcionNum = LeerEnteroEnRango("Opción: ", (int)roles.Min(), (int)roles.Max());
 
                 PersonajeBase nuevo = (EnumRol)opcionNum switch
                 {
@@ -65,17 +70,17 @@ namespace ProyectoSimulador
                 };
 
                 _jugadores.Add(nuevo);
-                Console.WriteLine($"\n{nombre} ({nuevo.GetType().Name}) agregado con éxito");
+                Console.WriteLine($"\n{nombre} ({nuevo.GetType().Name}) agregado con éxito.");
 
                 if (_jugadores.Count < 2)
                 {
-                    Console.WriteLine("\n Debe haber al menos 2 jugadores para iniciar. Presione una tecla para cargar el siguiente...");
+                    Console.WriteLine("\nDebe haber al menos 2 jugadores para iniciar el juego.");
+                    Console.WriteLine("Presione una tecla para cargar el siguiente...");
                     Console.ReadKey();
                 }
                 else
                 {
-                    Console.Write("\n¿Desea ingresar otro jugador? (S/N): ");
-                    cargar = Console.ReadLine()?.Trim().ToUpper() == "S";
+                    cargar = ConsultarRespuestaSN("\n¿Desea ingresar otro jugador? (S/N): ");
                 }
             }
         }
@@ -102,13 +107,15 @@ namespace ProyectoSimulador
                 FaseCierreRonda();
 
                 numeroRonda++;
-                Console.WriteLine("\n Presione una tecla para ir a la siguiente ronda");
+                Console.WriteLine("\nPresione una tecla para ir a la siguiente ronda...");
                 Console.ReadKey();
             }
 
             var ganador = _jugadores.FirstOrDefault(p => p.VidaActual > 0);
             Console.Clear();
-            Console.WriteLine("¡FIN DEL JUEGO!");
+            Console.WriteLine("====================");
+            Console.WriteLine(" ¡FIN DEL JUEGO! ");
+            Console.WriteLine("====================");
             if (ganador != null)
             {
                 Console.WriteLine($"El ganador es {ganador.Nombre}");
@@ -122,8 +129,7 @@ namespace ProyectoSimulador
             Console.WriteLine($"TURNO DE: {atacante.Nombre} ({atacante.GetType().Name})");
             Console.WriteLine($"Vida: {atacante.VidaActual}/100 | Energía: {atacante.EnergiaActual}/{atacante.EnergiaMaxima}");
 
-            Console.Write("¿Desea activar su Habilidad Especial? (S/N): ");
-            bool quiereHabilidad = Console.ReadLine()?.Trim().ToUpper() == "S";
+            bool quiereHabilidad = ConsultarRespuestaSN("¿Desea activar su Habilidad Especial? (S/N): ");
             bool habExitosa = false;
 
             if (quiereHabilidad)
@@ -134,20 +140,17 @@ namespace ProyectoSimulador
             bool esquivaContraataque = habExitosa && (atacante is Arquero);
 
             var enemigosVivos = _jugadores.Where(p => p != atacante && p.VidaActual > 0).ToList();
-            Console.WriteLine("\n Elija un enemigo para atacar:");
+            Console.WriteLine("\nElija un enemigo para atacar:");
 
             for (int i = 0; i < enemigosVivos.Count; i++)
             {
                 Console.WriteLine($"{i + 1}. {enemigosVivos[i].Nombre} (Vida: {enemigosVivos[i].VidaActual})");
             }
 
-            Console.Write("Opción: ");
-            int.TryParse(Console.ReadLine(), out int opcionObjetivo);
+            int opcionObjetivo = LeerEnteroEnRango("Opción: ", 1, enemigosVivos.Count);
+            PersonajeBase objetivo = enemigosVivos[opcionObjetivo - 1];
 
-            int indice = Math.Max(0, Math.Min(opcionObjetivo - 1, enemigosVivos.Count - 1));
-            PersonajeBase objetivo = enemigosVivos[indice];
-
-            Console.WriteLine($"\n {atacante.Nombre} ataca a {objetivo.Nombre}");
+            Console.WriteLine($"\n{atacante.Nombre} ataca a {objetivo.Nombre}");
             CalcularYAplicarDanio(atacante, objetivo);
 
             if (objetivo.VidaActual > 0 && !esquivaContraataque)
@@ -163,12 +166,12 @@ namespace ProyectoSimulador
             atacante.ResetearEstadisticasTemporales();
         }
 
-        private static void CalcularYAplicarDanio(PersonajeBase atacante, PersonajeBase defensor)
+        private void CalcularYAplicarDanio(PersonajeBase atacante, PersonajeBase defensor)
         {
             int danio = Math.Max(1, atacante.AtaqueBase - defensor.DefensaBase);
             defensor.VidaActual = Math.Max(0, defensor.VidaActual - danio);
 
-            Console.WriteLine($"-> Inflige {danio} de daño. Vida de {defensor.Nombre}: {defensor.VidaActual}");
+            Console.WriteLine($"   -> Inflige {danio} de daño. Vida de {defensor.Nombre}: {defensor.VidaActual}");
 
             if (defensor.VidaActual == 0)
             {
@@ -191,21 +194,41 @@ namespace ProyectoSimulador
             }
         }
 
-        private static bool ConsultarRevancha()
-        {
-            Console.Write("\n¿Desean jugar una revancha con los mismos personajes? (S/N): ");
-            return Console.ReadLine()?.Trim().ToUpper() == "S";
-        }
-
         private void ReiniciarEstadisticas()
         {
             foreach (var p in _jugadores)
             {
-                p.VidaActual = 100;
+                p.VidaActual = p.VidaMax;
                 p.EnergiaActual = p.EnergiaMaxima;
                 p.ResetearEstadisticasTemporales();
             }
             Console.WriteLine("\nTodas las estadísticas fueron restauradas a sus valores iniciales.");
+        }
+
+        private int LeerEnteroEnRango(string mensaje, int min, int max)
+        {
+            int valor;
+            Console.Write(mensaje);
+            while (!int.TryParse(Console.ReadLine(), out valor) || valor < min || valor > max)
+            {
+                Console.WriteLine($"Entrada inválida. Ingrese un número entre {min} y {max}.");
+                Console.Write(mensaje);
+            }
+            return valor;
+        }
+
+        private bool ConsultarRespuestaSN(string mensaje)
+        {
+            while (true)
+            {
+                Console.Write(mensaje);
+                string entrada = Console.ReadLine()?.Trim().ToUpper();
+
+                if (entrada == "S") return true;
+                if (entrada == "N") return false;
+
+                Console.WriteLine("Entrada inválida. Ingrese únicamente 'S' para Sí o 'N' para No.");
+            }
         }
     }
 }
